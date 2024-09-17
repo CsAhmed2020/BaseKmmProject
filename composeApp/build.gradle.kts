@@ -1,4 +1,4 @@
-import org.jetbrains.compose.desktop.application.dsl.TargetFormat
+import org.gradle.api.internal.artifacts.dependencies.DefaultExternalModuleDependency
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
@@ -7,6 +7,14 @@ plugins {
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.jetbrainsCompose)
     alias(libs.plugins.compose.compiler)
+
+//    import plugins
+    alias(libs.plugins.kotlinxSerialization)
+    alias(libs.plugins.sqldelight)
+
+
+    // Add kapt plugin for Android
+    id("kotlin-kapt")
 }
 
 kotlin {
@@ -33,6 +41,18 @@ kotlin {
         androidMain.dependencies {
             implementation(compose.preview)
             implementation(libs.androidx.activity.compose)
+
+            //android dependencies for ktor client and sqlDelight driver
+            implementation(libs.ktor.client.android)
+            implementation(libs.android.driver)
+
+            //android dependencies
+            implementation(libs.hilt.android)
+            implementation(libs.androidx.hilt.navigation.compose)
+            //here we use configurations["kapt"] instead of kapt()
+            configurations["kapt"].dependencies.add(DefaultExternalModuleDependency("com.google.dagger", "hilt-android-compiler", "2.42"))
+            configurations["kapt"].dependencies.add(DefaultExternalModuleDependency("androidx.hilt", "hilt-compiler", "1.0.0"))
+
         }
         commonMain.dependencies {
             implementation(compose.runtime)
@@ -43,8 +63,39 @@ kotlin {
             implementation(compose.components.uiToolingPreview)
             implementation(libs.androidx.lifecycle.viewmodel)
             implementation(libs.androidx.lifecycle.runtime.compose)
+
+            //shared dependencies
+            implementation(libs.kotlinx.coroutines.core)
+            implementation(libs.ktor.client.core)
+            implementation(libs.ktor.client.content.negotiation)
+            implementation(libs.ktor.serialization.kotlinx.json)
+            implementation(libs.sqlDelight.runtime)
+            implementation(libs.kotlinx.datetime)
+            implementation(libs.koin.core)
+
+        }
+        iosMain.dependencies {
+            //native dependencies for ktor client and sqlDelight driver
+            implementation(libs.ktor.client.darwin)
+            implementation(libs.native.driver)
         }
     }
+
+    targets.configureEach {
+        compilations.configureEach {
+            compilerOptions.configure {
+                freeCompilerArgs.add("-Xexpect-actual-classes")
+            }
+        }
+    }
+}
+
+sqldelight {
+    databases {
+    create("MyDatabase") {
+        packageName = "com.csahmed2020.demo.sqldelight"
+    }
+}
 }
 
 android {
@@ -73,14 +124,24 @@ android {
         }
     }
     compileOptions {
+        // Enable core library desugaring for Java 8+ APIs
+        isCoreLibraryDesugaringEnabled = true
+        
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
+
     buildFeatures {
         compose = true
     }
     dependencies {
         debugImplementation(compose.uiTooling)
-    }
-}
 
+        //Enable core library desugaring It is used to enable certain Java 8+ features on lower Android API levels.
+        coreLibraryDesugaring(libs.desugar.jdk.libs)
+    }
+
+}
+dependencies {
+    //implementation(project(":composeApp"))
+}

@@ -1,0 +1,40 @@
+---TABLE
+CREATE TABLE IF NOT EXISTS `user`(
+    `id` INTEGER PRIMARY KEY NOT NULL,
+    `title` TEXT NOT NULL,
+    `age` INTEGER,
+    `address` TEXT
+);
+
+---INDICES
+CREATE UNIQUE INDEX IF NOT EXISTS user_id_title_idxs ON `user` (`id`,`title`);
+
+
+--QUERIES
+getAllUsers:
+SELECT * FROM `user` ORDER BY id DESC;
+
+getById:
+SELECT * FROM `user` WHERE id = :id LIMIT 1;
+
+deleteWithIds:
+DELETE FROM `user` WHERE id IN ?;
+
+deleteWithId:
+DELETE FROM `user` WHERE id = :id;
+
+deleteAll:
+DELETE FROM `user`;
+
+insert:
+INSERT OR REPLACE INTO `user` (
+    `id`,
+    `title`,
+    `age`,
+    `address`
+) VALUES (
+    :id,
+    :title,
+    :age,
+    :address
+);
